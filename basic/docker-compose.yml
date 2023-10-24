@@ -1,0 +1,40 @@
+services:
+  nsqlookupd:
+    image: nsqio/nsq:v1.2.1
+    command: /nsqlookupd
+    expose:
+      - 4160
+      - 4161
+    ports:
+      - 4161:4161
+
+  nsqd:
+    image: nsqio/nsq:v1.2.1
+    volumes:
+      - /data
+    command: "sh -c '/nsqd \
+      -broadcast-address=localhost \
+      -data-path=/data \
+      -lookupd-tcp-address=nsqlookupd:4160 \
+      '"
+    links:
+      - nsqlookupd
+    expose:
+      - 4150
+      - 4151
+    ports:
+      - 4150:4150
+      - 4151:4151
+
+  nsqadmin:
+    image: nsqio/nsq:v1.2.1
+    command: "sh -c '/nsqadmin \
+      -lookupd-http-address=nsqlookupd:4161
+      '"
+    links:
+      - nsqlookupd
+      - nsqd
+    expose:
+      - 4171
+    ports:
+      - 4171:4171
