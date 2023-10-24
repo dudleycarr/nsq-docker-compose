@@ -1,0 +1,103 @@
+services:
+  graphitestatsd:
+    image: graphiteapp/graphite-statsd
+    expose:
+      - 80
+      - 8125/udp
+    ports:
+      - 8080:80
+
+  nsqlookupd:
+    image: nsqio/nsq:v1.2.1
+    command: /nsqlookupd
+    expose:
+      - 4160
+      - 4161
+    ports:
+      - 4161:4161
+
+  nsqd_1:
+    image: nsqio/nsq:v1.2.1
+    volumes:
+      - /data
+    command: "sh -c '/nsqd \
+      -broadcast-address=nsqd_1 \
+      -data-path=/data \
+      -lookupd-tcp-address=nsqlookupd:4160 \
+      -e2e-processing-latency-percentile=1.0,0.99,0.95,0.70 \
+      -statsd-address=graphitestatsd:8125 \
+      '"
+    links:
+      - nsqlookupd
+      - graphitestatsd
+    expose:
+      - 4150
+      - 4151
+    ports:
+      - 4150:4150
+      - 4151:4151
+
+  nsqd_2:
+    image: nsqio/nsq:v1.2.1
+    volumes:
+      - /data
+    command: "sh -c '/nsqd \
+      -broadcast-address=nsqd_2 \
+      -tcp-address=0.0.0.0:5150 \
+      -http-address=0.0.0.0:5151 \
+      -data-path=/data \
+      -lookupd-tcp-address=nsqlookupd:4160 \
+      -e2e-processing-latency-percentile=1.0,0.99,0.95,0.70 \
+      -statsd-address=graphitestatsd:8125 \
+      '"
+    links:
+      - nsqlookupd
+      - graphitestatsd
+    expose:
+      - 5150
+      - 5151
+    ports:
+      - 5150:5150
+      - 5151:5151
+
+  nsqd_3:
+    image: nsqio/nsq:v1.2.1
+    volumes:
+      - /data
+    command: "sh -c '/nsqd \
+      -broadcast-address=nsqd_3 \
+      -tcp-address=0.0.0.0:6150 \
+      -http-address=0.0.0.0:6151 \
+      -data-path=/data \
+      -lookupd-tcp-address=nsqlookupd:4160 \
+      -e2e-processing-latency-percentile=1.0,0.99,0.95,0.70 \
+      -statsd-address=graphitestatsd:8125 \
+      '"
+    links:
+      - nsqlookupd
+      - graphitestatsd
+    expose:
+      - 4150
+      - 4151
+    ports:
+      - 6150:6150
+      - 6151:6151
+
+  nsqadmin:
+    image: nsqio/nsq:v1.2.1
+    command: "sh -c '/nsqadmin \
+      -lookupd-http-address=nsqlookupd:4161 \
+      -graphite-url=http://graphitestatsd:8080 \
+      -proxy-graphite \
+      -statsd-counter-format=stats.%s \
+      '"
+    links:
+      - nsqlookupd
+      - nsqd_1
+      - nsqd_2
+      - nsqd_3
+      - graphitestatsd
+    expose:
+      - 4171
+    ports:
+      - 4171:4171
