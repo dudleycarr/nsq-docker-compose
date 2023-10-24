@@ -20,7 +20,7 @@ services:
     volumes:
       - /data
     command: "sh -c '/nsqd \
-      -broadcast-address=localhost \
+      -broadcast-address=nsqd \
       -data-path=/data \
       -lookupd-tcp-address=nsqlookupd:4160 \
       -e2e-processing-latency-percentile=1.0,0.99,0.95,0.70 \
@@ -40,7 +40,7 @@ services:
     image: nsqio/nsq:v1.2.1
     command: "sh -c '/nsqadmin \
       -lookupd-http-address=nsqlookupd:4161 \
-      -graphite-url=http://grahitestatsd:8080 \
+      -graphite-url=http://graphitestatsd:8080 \
       -proxy-graphite \
       -statsd-counter-format=stats.%s \
       '"
